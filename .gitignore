@@ -1,0 +1,17 @@
+.DS_Store
+
+# Local .terraform directories
+**/infra/.terraform/*
+
+# .tfstate files
+**/infra/*.tfstate
+**/*.tfstate.*
+
+# Crash log files
+**/crash.log
+
+**/src/*.sqlite
+.direnv/*
+.azure
+.venv
+db.sqlite
