@@ -1,0 +1,24 @@
+MAKEFLAGS += --silent
+.DEFAULT_GOAL := help
+
+compose: ## Run with docker compose
+	COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker-compose up --build --remove-orphans --force-recreate -d
+
+pylint: ## Run pylint
+	pylint $(shell git ls-files '*.py')
+
+release: ## Release (eg. V=0.0.1)
+	 @[ "$(V)" ] \
+		 && read -p "Press enter to confirm and push tag v$(V) to origin, <Ctrl+C> to abort ..." \
+		 && git tag v$(V) -m "v$(V)" \
+		 && git push origin v$(V)
+
+help:
+	awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
+clean: ## Clean up
+	docker-compose rm -s -a -v -f || true
+
+.PHONY: all test clean release
+
+-include include.mk
