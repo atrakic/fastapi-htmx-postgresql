@@ -14,6 +14,7 @@ release: ## Release (eg. V=0.0.1)
 		 && ./scripts/bump_chart.sh $(CHART) $(V) \
 		 && git tag v$(V) -m "chore: v$(V)" \
 		 && git push origin v$(V) -f \
+		 && git fetch --tags --force --all -p \
 		 && git describe --tags $(shell git rev-list --tags --max-count=1)
 
 help:
