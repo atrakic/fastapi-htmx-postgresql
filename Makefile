@@ -7,10 +7,11 @@ compose: ## Run with docker compose
 pylint: ## Run pylint
 	pylint $(shell git ls-files '*.py')
 
+CHART := fastapi-htmx-postgresql
 release: ## Release (eg. V=0.0.1)
 	 @[ "$(V)" ] \
 		 && read -p "Press enter to confirm and push tag v$(V) to origin, <Ctrl+C> to abort ..." \
-		 && ./scripts/bump_chart.sh $(V) \
+		 && ./scripts/bump_chart.sh $(CHART) $(V) \
 	 	 && git tag v$(V) -m "v$(V)" \
 		 && git push origin v$(V) \
 		 && git describe --tags $(shell git rev-list --tags --max-count=1)
