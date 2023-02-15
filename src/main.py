@@ -10,6 +10,8 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
+from prometheus_fastapi_instrumentator import Instrumentator
+
 from database import Base
 from database import SessionLocal
 from database import engine
@@ -21,7 +23,7 @@ Base.metadata.create_all(bind=engine)
 app = FastAPI(
     description="Todo API",
 )
-
+Instrumentator().instrument(app).expose(app)
 templates = Jinja2Templates(directory="templates")
 
 
