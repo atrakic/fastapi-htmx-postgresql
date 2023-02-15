@@ -34,22 +34,22 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
-            - name: SQLALCHEMY_DATABASE_URI
+            - name: "SQLALCHEMY_DATABASE_URI"
               valueFrom:
                 secretKeyRef:
-                  name: db-secret
-                  key: postgresql-db-uri
+                  name: {{ .Release.Name }}
+                  key: postgresqlDbUri
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
               protocol: TCP
           livenessProbe:
             httpGet:
-              path: /
+              path: /ping
               port: http
           readinessProbe:
             httpGet:
-              path: /
+              path: /ping
               port: http
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
