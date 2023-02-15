@@ -27,11 +27,6 @@ jobs:
         with:
           ref: ${{ github.ref }}
 
-      - name: Configure Git
-        run: |
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"            
-
       - name: Install Helm
         uses: azure/setup-helm@v3
 
@@ -43,7 +38,7 @@ jobs:
             VERSION=${GITHUB_REF/refs\/tags\//}
           fi
           echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
-          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+          echo "VERSION=${VERSION:1}" >> $GITHUB_OUTPUT # strip v*
           echo "REVISION=${GITHUB_SHA}" >> $GITHUB_OUTPUT
           #echo "CURR_VERSION=$(cat charts/fastapi-htmx-postgresql/Chart.yaml | grep ^version | head -1 | awk -F: '{ print $2 }' | sed 's/[\",]//g' | tr -d '[[:space:]]'" >> $GITHUB_OUTPUT
       
