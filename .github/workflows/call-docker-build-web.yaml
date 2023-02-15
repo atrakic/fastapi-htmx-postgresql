@@ -8,7 +8,7 @@ on:
       - 'main'
     # only build when important files change
     paths:
-      - 'src/web/**'
+      - 'src/**'
       - '.github/workflows/call-docker-build-web.yaml'
   pull_request:
     branches:
