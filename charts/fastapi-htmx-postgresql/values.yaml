@@ -85,6 +85,6 @@ tolerations: []
 affinity: {}
 
 fhp:
-  postgresqlDbUri: "postgresql+psycopg2://postgres:mysecretpassword@db/postgres"
+  postgresqlDbUri: "postgresql+psycopg2://dbuser:mysecretpassword@postgresql.default.svc.cluster.local/dbname"
   metrics:
     enabled: false
