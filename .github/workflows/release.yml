@@ -1,0 +1,78 @@
+name: Release Helm Chart
+on:
+  push:
+    branches:
+      - "releases/*"
+    workflow_dispatch:
+    # Sequence of patterns matched against refs/tags
+    tags:
+    - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+permissions:
+  contents: write # needed to write releases
+  id-token: write # needed for keyless signing
+  packages: write # needed for ghcr access
+
+env:
+  HELM_CHART: fastapi-htmx-postgresql 
+  CHART_URL: https://atrakic.github.io/helm-charts/
+
+jobs:
+  release:
+    name: "Release"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: "actions/checkout@v2"
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"            
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+
+      - name: Prepare
+        id: prep
+        run: |
+          VERSION=sha-${GITHUB_SHA::8}
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF/refs\/tags\//}
+          fi
+          echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+          echo "REVISION=${GITHUB_SHA}" >> $GITHUB_OUTPUT
+          echo "CURR_VERSION=$(cat charts/fastapi-htmx-postgresql/Chart.yaml | grep ^version | head -1 | awk -F: '{ print $2 }' | sed 's/[\",]//g' | tr -d '[[:space:]]'" >> $GITHUB_OUTPUT
+      
+      - name: Publish Helm chart to GHCR
+        run: |
+          set -ex
+          helm package charts/${{ env.HELM_CHART }}
+          helm push ${{ env.HELM_CHART }}-${{ steps.prep.outputs.VERSION }}.tgz oci://ghcr.io/${{ github.repository_owner }}/charts
+          rm -rf ${{ env.HELM_CHART }}-${{ steps.prep.outputs.VERSION }}.tgz
+
+##
+## Disabled
+##
+      - name: Publish Helm chart
+        if: false
+        uses: stefanprodan/helm-gh-pages@master
+        with:
+          token: ${{ secrets.BOT_GITHUB_TOKEN }}
+          charts_dir: charts
+          charts_url: ${{ env.CHART_URL }}
+          owner: ${{ github.repository_owner }} # atrakic
+          repository: helm-charts
+          branch: gh-pages
+          target_dir: charts
+          commit_username: "$GITHUB_ACTOR"
+          commit_email: "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Confirm helm repo listings
+        run: |
+          helm repo add "${{ github.repository_owner }}" "https://${{ github.repository_owner }}.github.io/helm-charts/"
+          helm repo update
+          helm search repo "${{ github.repository_owner }}"
