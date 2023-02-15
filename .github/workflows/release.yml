@@ -21,10 +21,11 @@ jobs:
     name: "Release"
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout source code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
         with:
           ref: ${{ github.ref }}
+
+      - uses: sigstore/cosign-installer@main
 
       - name: Install Helm
         uses: azure/setup-helm@v3
