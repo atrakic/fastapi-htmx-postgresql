@@ -45,7 +45,7 @@ jobs:
           echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
           echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
           echo "REVISION=${GITHUB_SHA}" >> $GITHUB_OUTPUT
-          echo "CURR_VERSION=$(cat charts/fastapi-htmx-postgresql/Chart.yaml | grep ^version | head -1 | awk -F: '{ print $2 }' | sed 's/[\",]//g' | tr -d '[[:space:]]'" >> $GITHUB_OUTPUT
+          #echo "CURR_VERSION=$(cat charts/fastapi-htmx-postgresql/Chart.yaml | grep ^version | head -1 | awk -F: '{ print $2 }' | sed 's/[\",]//g' | tr -d '[[:space:]]'" >> $GITHUB_OUTPUT
       
       - name: Publish Helm chart to GHCR
         run: |
