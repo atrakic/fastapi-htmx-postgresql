@@ -1,6 +1,14 @@
 name: Pylint
 
-on: [push]
+on:
+  push:
+    branches:
+    # matches every branch
+      - '**'
+    # only build when important files change
+    paths:
+      - 'src/**'
+      - '.github/workflows/pylint.yml'
 
 jobs:
   build:
@@ -9,16 +17,16 @@ jobs:
       matrix:
         python-version: ["3.9", "3.10"]
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pylint pytest
-        pip install -r ./src/requirements.txt
-    - name: Analysing the code with pylint
-      run: |
-        pylint $(git ls-files '*.py')
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pylint pytest
+          pip install -r ./src/requirements.txt
+      - name: Analysing the code with pylint
+        run: |
+          pylint $(git ls-files '*.py')
