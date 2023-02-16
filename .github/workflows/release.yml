@@ -22,8 +22,6 @@ permissions:
 env:
   # Our Helm chart:
   HELM_CHART: fastapi-htmx-postgresql
-  # Remote repo with helm chart sources:
-  REMOTE_CHART_REPO: github.io/atrakic/helm-charts.git
 
 jobs:
   release:
@@ -50,20 +48,8 @@ jobs:
           echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
           echo "REVISION=${GITHUB_SHA}" >> $GITHUB_OUTPUT
 
-      - name: Configure Git
-        run: |
-          git config user.name "$GITHUB_ACTOR"
-          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-
       - name: Log in to GHCR registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
-
-      - name: Bump chart
-        if: false
-        id: update-version
-        run: |
-          ./scripts/bump_chart.sh ${{ env.HELM_CHART }} ${{ steps.prep.outputs.VERSION }}
-          git commit --message "Update ${{ env.HELM_CHART }} from https://github.com/$GITHUB_REPOSITORY/commit/$GITHUB_SHA" --allow-empty
 
       - name: Package Helm chart and publish to GHCR.io
         run: |
@@ -78,37 +64,19 @@ jobs:
         run: |
           cosign sign ghcr.io/${{ github.repository_owner }}/charts/${{ env.HELM_CHART }}:${{ steps.prep.outputs.VERSION }}
 
-      - name: Add Helm chart source to remote repo
-        if: false
-        id: publish-helm
-        run: |
-          # Setup auth and workspace
-          CLONE_DIR=$(mktemp -d)
-          git clone "https://${{ secrets.HELM_CHARTS_PAT }}@${{ env.REMOTE_CHART_REPO }}" "$CLONE_DIR"
-
-          # Add chart source and push commit (a separate remote pipeline would package and release to GH pages)
-          cp -a charts/${{ env.HELM_CHART }} "$CLONE_DIR/charts/"
-          cd $CLONE_DIR
-          git add .
-          git status -s . | cat -
-          git commit --message "Update ${{ env.HELM_CHART }} from https://github.com/$GITHUB_REPOSITORY/commit/$GITHUB_SHA" --allow-empty
-          git push -u origin main
-          cd -
-          rm -rf "$CLONE_DIR"
-
       - name: Publish Helm chart GH pages
         uses: stefanprodan/helm-gh-pages@master
         with:
           token: ${{ secrets.HELM_CHARTS_PAT }}
           charts_dir: charts
-          charts_url: https://${{ github.repository_owner }}.github.io/helm-charts #${{ env.CHART_URL }}
+          charts_url: https://${{ github.repository_owner }}.github.io/helm-charts
           owner: ${{ github.repository_owner }}
           repository: helm-charts
           branch: gh-pages
-          target_dir: charts
-          commit_username: "${{ env.HELM_CHART }}-$GITHUB_ACTOR"
+          #target_dir: charts
+          commit_username: "${{ env.HELM_CHART }}"
           #commit_email: "$GITHUB_ACTOR@users.noreply.github.com"
-
+      
       - name: Deploy summary
         run: |
           echo "### https://${{ github.repository_owner }}.github.io/helm-charts/ :rocket:" >> $GITHUB_STEP_SUMMARY
