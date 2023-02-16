@@ -23,7 +23,7 @@ env:
   # Our Helm chart:
   HELM_CHART: fastapi-htmx-postgresql
   # Remote repo with helm chart sources:
-  REMOTE_CHART_REPO: atrakic.github.io/helm-charts.git
+  REMOTE_CHART_REPO: github.io/atrakic/helm-charts.git
 
 jobs:
   release:
