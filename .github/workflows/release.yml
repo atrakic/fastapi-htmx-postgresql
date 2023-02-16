@@ -1,0 +1,116 @@
+name: release
+
+# USAGE:
+# git checkout main
+# git pull
+# make release 0.1.1
+
+# SECRETS NEEDED:
+# HELM_CHARTS_PAT - PAT that has access to push to the github based helm charts repo
+
+on:
+  push:
+    # Publish `v1.2.3` tags as releases.
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+permissions:
+  contents: write # needed to write releases
+  id-token: write # needed for keyless signing
+  packages: write # needed for ghcr access
+
+env:
+  # Our Helm chart:
+  HELM_CHART: fastapi-htmx-postgresql
+  # Remote repo with helm chart sources:
+  REMOTE_CHART_REPO: atrakic.github.io/helm-charts.git
+
+jobs:
+  release:
+    name: "Release"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref }}
+
+      - uses: sigstore/cosign-installer@main
+
+      - name: Install Helm
+        uses: azure/setup-helm@v3
+
+      - name: Prepare
+        id: prep
+        run: |
+          VERSION=sha-${GITHUB_SHA::8}
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF/refs\/tags\//}
+          fi
+          echo "VERSION=${VERSION:1}" >> $GITHUB_OUTPUT   # Strip "v" prefix from tag name
+          echo "BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
+          echo "REVISION=${GITHUB_SHA}" >> $GITHUB_OUTPUT
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Log in to GHCR registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
+
+      - name: Bump chart
+        if: false
+        id: update-version
+        run: |
+          ./scripts/bump_chart.sh ${{ env.HELM_CHART }} ${{ steps.prep.outputs.VERSION }}
+          git commit --message "Update ${{ env.HELM_CHART }} from https://github.com/$GITHUB_REPOSITORY/commit/$GITHUB_SHA" --allow-empty
+
+      - name: Package Helm chart and publish to GHCR.io
+        run: |
+          set -ex
+          helm package charts/${{ env.HELM_CHART }}
+          helm push ${{ env.HELM_CHART }}-${{ steps.prep.outputs.VERSION }}.tgz oci://ghcr.io/${{ github.repository_owner }}/charts
+          rm -rf ${{ env.HELM_CHART }}-${{ steps.prep.outputs.VERSION }}.tgz
+
+      - name: Sign OCI artifacts
+        env:
+          COSIGN_EXPERIMENTAL: 1
+        run: |
+          cosign sign ghcr.io/${{ github.repository_owner }}/charts/${{ env.HELM_CHART }}:${{ steps.prep.outputs.VERSION }}
+
+      - name: Add Helm chart source to remote repo
+        id: publish-helm
+        run: |
+          # Setup auth and workspace
+          CLONE_DIR=$(mktemp -d)
+          git clone "https://${{ secrets.HELM_CHARTS_PAT }}@${{ env.REMOTE_CHART_REPO }}" "$CLONE_DIR"
+
+          # Add chart source and push commit (a separate remote pipeline would package and release to GH pages)
+          cp -a charts/"${{ env.HELM_CHART }}" "$CLONE_DIR/charts"
+          cd "$CLONE_DIR"
+          git add .
+          git commit --message "Update ${{ env.HELM_CHART }} from https://github.com/$GITHUB_REPOSITORY/commit/$GITHUB_SHA" --allow-empty
+          git push -u origin main
+          cd -
+          rm -rf "$CLONE_DIR"
+
+      - name: Publish Helm chart GH pages
+        if: false
+        id: publish-helm-gh-pages
+        uses: stefanprodan/helm-gh-pages@master
+        with:
+          token: ${{ secrets.HELM_CHARTS_PAT }}
+          charts_dir: charts
+          charts_url: ${{ env.CHART_URL }}
+          owner: ${{ github.repository_owner }}
+          repository: helm-charts
+          branch: gh-pages
+          target_dir: charts
+          commit_username: "${{ env.HELM_CHART }}-$GITHUB_ACTOR"
+          #commit_email: "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Confirm helm repo listings
+        run: |
+          helm repo add "${{ github.repository_owner }}" "https://${{ github.repository_owner }}.github.io/helm-charts/"
+          helm repo update
+          helm search repo "${{ github.repository_owner }}"

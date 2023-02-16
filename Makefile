@@ -7,7 +7,7 @@ compose: ## Run with docker compose
 pylint: ## Run pylint
 	pylint $(shell git ls-files '*.py')
 
-CHART := fastapi-htmx-postgresql
+CHART ?= fastapi-htmx-postgresql
 release: ## Release (eg. V=0.0.1)
 	 @[ "$(V)" ] \
 		 && read -p "Press enter to confirm and push tag v$(V) to origin, <Ctrl+C> to abort ..." \
