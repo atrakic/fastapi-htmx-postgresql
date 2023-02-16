@@ -79,6 +79,7 @@ jobs:
           cosign sign ghcr.io/${{ github.repository_owner }}/charts/${{ env.HELM_CHART }}:${{ steps.prep.outputs.VERSION }}
 
       - name: Add Helm chart source to remote repo
+        if: false
         id: publish-helm
         run: |
           # Setup auth and workspace
@@ -96,7 +97,6 @@ jobs:
           rm -rf "$CLONE_DIR"
 
       - name: Publish Helm chart GH pages
-        if: false
         uses: stefanprodan/helm-gh-pages@master
         with:
           token: ${{ secrets.HELM_CHARTS_PAT }}
