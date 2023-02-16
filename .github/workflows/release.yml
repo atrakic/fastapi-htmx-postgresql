@@ -86,9 +86,10 @@ jobs:
           git clone "https://${{ secrets.HELM_CHARTS_PAT }}@${{ env.REMOTE_CHART_REPO }}" "$CLONE_DIR"
 
           # Add chart source and push commit (a separate remote pipeline would package and release to GH pages)
-          cp -a charts/"${{ env.HELM_CHART }}" "$CLONE_DIR/charts"
-          cd "$CLONE_DIR"
+          cp -a charts/${{ env.HELM_CHART }} "$CLONE_DIR/charts/"
+          cd $CLONE_DIR
           git add .
+          git status -s . | cat -
           git commit --message "Update ${{ env.HELM_CHART }} from https://github.com/$GITHUB_REPOSITORY/commit/$GITHUB_SHA" --allow-empty
           git push -u origin main
           cd -
@@ -96,12 +97,11 @@ jobs:
 
       - name: Publish Helm chart GH pages
         if: false
-        id: publish-helm-gh-pages
         uses: stefanprodan/helm-gh-pages@master
         with:
           token: ${{ secrets.HELM_CHARTS_PAT }}
           charts_dir: charts
-          charts_url: ${{ env.CHART_URL }}
+          charts_url: https://${{ github.repository_owner }}.github.io/helm-charts #${{ env.CHART_URL }}
           owner: ${{ github.repository_owner }}
           repository: helm-charts
           branch: gh-pages
@@ -109,8 +109,6 @@ jobs:
           commit_username: "${{ env.HELM_CHART }}-$GITHUB_ACTOR"
           #commit_email: "$GITHUB_ACTOR@users.noreply.github.com"
 
-      - name: Confirm helm repo listings
+      - name: Deploy summary
         run: |
-          helm repo add "${{ github.repository_owner }}" "https://${{ github.repository_owner }}.github.io/helm-charts/"
-          helm repo update
-          helm search repo "${{ github.repository_owner }}"
+          echo "### https://${{ github.repository_owner }}.github.io/helm-charts/ :rocket:" >> $GITHUB_STEP_SUMMARY
