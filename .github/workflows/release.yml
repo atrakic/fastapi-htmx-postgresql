@@ -1,4 +1,4 @@
-name: release
+name: Helm release
 
 # USAGE:
 # git checkout main
