@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from prometheus_fastapi_instrumentator import Instrumentator
 
-from database import Base, SessionLocal, engine, healthcheck
+from database import Base, SessionLocal, engine
 
 from log import EndpointFilter
 
@@ -85,6 +85,15 @@ def delete(item_id: int, db_name: Session = Depends(get_db)):
 
 
 @app.get("/healthcheck")
-def ping():
-    db_res = healthcheck()
-    return {"dbstatus": db_res, "container_id": os.uname()}
+def healthcheck():
+    db_health = True
+    connection = engine.raw_connection()
+    try:
+        cursor_obj = connection.cursor()
+        cursor_obj.execute("SELECT 1")
+        cursor_obj.close()
+    except Exception:
+        db_health = False
+    finally:
+        connection.close()
+    return {"dbstatus": db_health, "container_id": os.uname()}

@@ -15,18 +15,3 @@ engine = create_engine(
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
-
-
-def healthcheck():
-    is_database_working = True
-    connection = engine.raw_connection()
-    try:
-        cursor_obj = connection.cursor()
-        cursor_obj.execute("SELECT 1")
-        cursor_obj.close()
-    except Exception as e:
-        output = str(e)
-        is_database_working = False
-    finally:
-        connection.close()
-    return is_database_working
