@@ -32,7 +32,7 @@ jobs:
         with:
           ref: ${{ github.ref }}
 
-      - uses: sigstore/cosign-installer@main
+      - uses: sigstore/cosign-installer@v3
 
       - name: Install Helm
         uses: azure/setup-helm@v3
@@ -62,7 +62,7 @@ jobs:
         env:
           COSIGN_EXPERIMENTAL: 1
         run: |
-          cosign sign ghcr.io/${{ github.repository_owner }}/charts/${{ env.HELM_CHART }}:${{ steps.prep.outputs.VERSION }}
+          cosign sign ghcr.io/${{ github.repository_owner }}/charts/${{ env.HELM_CHART }}:${{ steps.prep.outputs.VERSION }} --yes
 
       - name: Publish Helm chart GH pages
         uses: stefanprodan/helm-gh-pages@master
