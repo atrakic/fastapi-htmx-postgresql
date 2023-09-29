@@ -2,6 +2,8 @@
 
 import os
 import uuid
+import logging
+
 from fastapi import Depends
 from fastapi import FastAPI, Form
 from fastapi import Request, Response
@@ -12,16 +14,19 @@ from sqlalchemy.orm import Session
 
 from prometheus_fastapi_instrumentator import Instrumentator
 
-from database import Base
-from database import SessionLocal
-from database import engine
+from database import Base, SessionLocal, engine, healthcheck
+
+from log import EndpointFilter
 
 from models import create_todo, delete_todo, get_todo, get_todos, update_todo
 
 Base.metadata.create_all(bind=engine)
 
+uvicorn_logger = logging.getLogger("uvicorn.access")
+uvicorn_logger.addFilter(EndpointFilter(path="/healthcheck"))
+
 app = FastAPI(
-    description="Todo API",
+    description="Todo FastAPI",
 )
 Instrumentator().instrument(app).expose(app)
 templates = Jinja2Templates(directory="templates")
@@ -79,6 +84,7 @@ def delete(item_id: int, db_name: Session = Depends(get_db)):
     delete_todo(db_name, item_id)
 
 
-@app.get("/ping")
+@app.get("/healthcheck")
 def ping():
-    return {"status": "success", "message": "pong!", "container_id": os.uname()}
+    db_res = healthcheck()
+    return {"dbstatus": db_res, "container_id": os.uname()}

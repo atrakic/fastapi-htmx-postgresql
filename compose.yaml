@@ -11,8 +11,8 @@ services:
       - client-side
       - server-side
     healthcheck:
-      test: /healthchecks/curl.sh
-      interval: "30s"
+      test: /healthchecks/request.py
+      interval: "10s"
     volumes:
       - ./healthchecks:/healthchecks
     depends_on:
