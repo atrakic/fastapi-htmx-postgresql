@@ -92,7 +92,7 @@ def healthcheck():
         cursor_obj = connection.cursor()
         cursor_obj.execute("SELECT 1")
         cursor_obj.close()
-    except Exception:
+    except: # pylint: disable=bare-except
         db_health = False
     finally:
         connection.close()
