@@ -1,7 +1,9 @@
 import logging
 import typing as t
+import dataclasses
 
 
+@dataclasses.dataclass
 class EndpointFilter(logging.Filter):
     def __init__(
         self,
