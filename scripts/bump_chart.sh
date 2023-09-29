@@ -15,7 +15,7 @@ chart_file="$chart_dir"/"$chart"/Chart.yaml
 
 gsed -i "s/^version:.*/version: $version/" "$chart_file"
 git add "$chart_file"
-git commit -m "chore(version): bump chart: $chart to version: $version"
+git commit -m "chore(version): bump chart: $chart to version: $version" --allow-empty
 
 if [[ -n "${oci_repo}" ]]; then
   helm package charts/"$chart"
