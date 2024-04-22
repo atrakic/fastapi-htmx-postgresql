@@ -1,7 +1,10 @@
 MAKEFLAGS += --silent
+
+BASEDIR=$(shell git rev-parse --show-toplevel)
+
 .DEFAULT_GOAL := help
 
-compose: ## Run with docker compose
+all: ## Run with docker compose
 	COMPOSE_DOCKER_CLI_BUILD=1 DOCKER_BUILDKIT=1 docker-compose up --build --remove-orphans --force-recreate -d
 
 pylint: ## Run pylint
@@ -28,8 +31,15 @@ release: ## Release (eg. V=0.0.1)
 help:
 	awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
+APP ?= app
+healthcheck:
+	docker inspect $(APP) --format "{{ (index (.State.Health.Log) 0).Output }}"
+
+test:
+	${BASEDIR}/healthchecks/curl.sh
+
 clean: ## Clean up
-	docker-compose rm -s -a -v -f || true
+	docker-compose down --remove-orphans -v --rmi local
 
 .PHONY: all test clean release
 

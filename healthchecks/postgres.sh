@@ -15,7 +15,8 @@ args=(
 )
 
 if select="$(echo 'SELECT 1' | psql "${args[@]}")" && [ "$select" = '1' ]; then
-	exit 0
+	echo "$host: $select"
+  exit 0
 fi
 
 exit 1
